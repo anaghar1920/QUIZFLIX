@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUIZFLIX - Watch, Learn & Master Quizzes</title>
+    <meta name="description" content="QUIZFLIX - The ultimate Netflix-style interactive quiz platform for Academic, STEM, and General Knowledge challenges.">
+    <!-- Google Fonts: Bebas Neue for Netflix-style branding & numbers, Outfit for modern UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/player.css">
+</head>
+<body class="netflix-dark">
+
+    <!-- Audio FX Toggle & Splash Screen -->
+    <div id="splash-intro" class="splash-screen hidden">
+        <div class="splash-content">
+            <div class="netflix-n-logo">Q</div>
+            <h1 class="splash-title">QUIZFLIX</h1>
+        </div>
+    </div>
+
+    <!-- 1. PROFILE GATEWAY SCREEN ("Who's Watching?") -->
+    <section id="profile-gateway" class="profile-gateway-view">
+        <div class="gateway-container">
+            <div class="gateway-header">
+                <span class="brand-logo-text">QUIZFLIX</span>
+            </div>
+            <h1 class="gateway-title">Who's Learning?</h1>
+            <p class="gateway-subtitle">Select your profile to load your personal quizzes, scores & progress</p>
+
+            <div id="profiles-grid" class="profiles-grid">
+                <!-- Dynamically populated up to 5 profiles -->
+            </div>
+
+            <div class="gateway-actions">
+                <button id="btn-manage-profiles" class="btn-netflix-secondary" onclick="Profiles.toggleManageMode()">
+                    <i class="fa-solid fa-pen"></i> <span id="manage-btn-text">Manage Profiles</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. MAIN APPLICATION (HOMEPAGE & BROWSE) -->
+    <div id="app-main" class="app-main hidden">
+
+        <!-- Top Navigation Bar -->
+        <header id="navbar" class="netflix-navbar">
+            <div class="nav-left">
+                <a href="#" class="brand-logo" onclick="App.navigate('home')">
+                    <span class="logo-red">QUIZ</span><span class="logo-white">FLIX</span>
+                </a>
+                <nav class="nav-links">
+                    <button class="nav-link active" data-tab="home" onclick="App.navigate('home')">Home</button>
+                    <button class="nav-link" data-tab="categories" onclick="App.navigate('categories')">Categories</button>
+                    <button class="nav-link" data-tab="continue" onclick="App.navigate('continue')">Continue Quiz</button>
+                    <button class="nav-link" data-tab="myquiz" onclick="App.navigate('myquiz')">My Quiz <span id="nav-bookmark-count" class="badge-count">0</span></button>
+                    <button class="nav-link" data-tab="leaderboard" onclick="App.navigate('leaderboard')">Leaderboard</button>
+                    <button class="nav-link" data-tab="history" onclick="App.navigate('history')">My History</button>
+                </nav>
+            </div>
+
+            <div class="nav-right">
+                <!-- Search Box -->
+                <div class="search-box" id="search-container">
+                    <button id="btn-search-toggle" class="nav-icon-btn" onclick="App.toggleSearch()">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    <input type="text" id="search-input" placeholder="Titles, STEM, History, tags..." oninput="App.handleSearch(this.value)">
+                    <button id="btn-search-clear" class="search-clear hidden" onclick="App.clearSearch()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Sound FX Toggle -->
+                <button id="btn-sound-toggle" class="nav-icon-btn sound-btn" title="Toggle Sound FX" onclick="SoundFX.toggleMute()">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Active Profile Menu Dropdown -->
+                <div class="profile-dropdown-container">
+                    <div class="profile-avatar-btn" id="active-profile-btn" onclick="App.toggleProfileDropdown()">
+                        <img id="header-avatar-img" src="assets/avatar-red.svg" alt="Profile" class="nav-avatar">
+                        <span id="header-profile-name" class="nav-profile-name">Alex</span>
+                        <i class="fa-solid fa-caret-down caret-icon"></i>
+                    </div>
+
+                    <div id="profile-dropdown-menu" class="profile-dropdown-menu hidden">
+                        <div class="dropdown-header">Switch Profile</div>
+                        <div id="dropdown-profiles-list" class="dropdown-profiles-list">
+                            <!-- Populated via JS -->
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="Profiles.openProfileModal(null)">
+                            <i class="fa-solid fa-circle-plus"></i> Add Profile
+                        </button>
+                        <button class="dropdown-item" onclick="Profiles.showProfileGateway()">
+                            <i class="fa-solid fa-users"></i> Manage Profiles
+                        </button>
+                        <button class="dropdown-item" onclick="App.openSettingsModal()">
+                            <i class="fa-solid fa-gear"></i> Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Search Results Overlay View -->
+        <section id="search-results-view" class="search-view hidden">
+            <div class="section-container">
+                <div class="search-header">
+                    <h2>Search Results for: <span id="search-query-display"></span></h2>
+                    <span id="search-results-count" class="search-count">0 quizzes found</span>
+                </div>
+                <div id="search-grid" class="cards-grid">
+                    <!-- Search Results Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Home & Content Rows View -->
+        <main id="main-content-view">
+            
+            <!-- 🎬 Hero Billboard (#1 Top Score Spotlight) -->
+            <section id="hero-billboard" class="billboard-section">
+                <div class="billboard-backdrop" id="billboard-bg"></div>
+                <div class="billboard-vignette"></div>
+                <div class="billboard-bottom-fade"></div>
+
+                <div class="billboard-content">
+                    <div class="billboard-badge">
+                        <span class="badge-n-icon">Q</span>
+                        <span class="badge-series-text">QUIZFLIX ORIGINAL • #1 TOP SCORE SPOTLIGHT</span>
+                    </div>
+
+                    <h1 id="billboard-title" class="billboard-title">Quantum Realm & Theoretical Physics</h1>
+                    
+                    <div class="billboard-meta">
+                        <span id="billboard-match" class="meta-match">99% Match</span>
+                        <span id="billboard-difficulty" class="meta-badge badge-hard">HARD</span>
+                        <span id="billboard-questions" class="meta-info">5 Questions</span>
+                        <span id="billboard-time" class="meta-info"><i class="fa-regular fa-clock"></i> 6 Mins</span>
+                        <span id="billboard-category" class="meta-category">Academic & STEM</span>
+                    </div>
+
+                    <p id="billboard-desc" class="billboard-description">
+                        Dive deep into Schrödinger's paradox, quantum entanglement, wave-particle duality, and Heisenberg's uncertainty principle in this ultimate challenge for physics scholars.
+                    </p>
+
+                    <div class="billboard-top-score-card">
+                        <i class="fa-solid fa-trophy trophy-gold"></i>
+                        <span class="top-score-label">Current #1 Record:</span>
+                        <strong id="billboard-top-score" class="top-score-value">570 Pts</strong>
+                        <span class="top-score-by">held by</span>
+                        <span id="billboard-top-player" class="top-player-name">Alex Quantum</span>
+                    </div>
+
+                    <div class="billboard-buttons">
+                        <button id="billboard-play-btn" class="btn-netflix-primary" onclick="App.playBillboardQuiz()">
+                            <i class="fa-solid fa-play"></i> Start Quiz
+                        </button>
+                        <button id="billboard-bookmark-btn" class="btn-netflix-secondary" onclick="App.toggleBillboardBookmark()">
+                            <i class="fa-solid fa-plus"></i> <span id="billboard-bookmark-text">My Quiz</span>
+                        </button>
+                        <button id="billboard-info-btn" class="btn-netflix-secondary" onclick="App.showBillboardInfo()">
+                            <i class="fa-solid fa-circle-info"></i> More Info
+                        </button>
+                    </div>
+                </div>
+
+                <div class="billboard-maturity-rating">
+                    <span class="rating-tag">ALL AGES</span>
+                    <button class="sound-pill-btn" onclick="SoundFX.toggleMute()">
+                        <i id="billboard-sound-icon" class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 🏠 Netflix Rows Container -->
+            <div class="content-rows-container">
+
+                <!-- ▶️ Continue Watching / In-Progress Row -->
+                <section id="continue-watching-section" class="netflix-row continue-row">
+                    <div class="row-header">
+                        <h2 class="row-title">
+                            <i class="fa-solid fa-clock-rotate-left row-icon red-accent"></i> Continue Quiz for <span id="continue-profile-name" class="profile-highlight">Alex</span>
+                        </h2>
+                        <span class="row-subtitle">Pick up right where you left off</span>
+                    </div>
+                    <div class="row-slider-wrapper">
+                        <button class="slider-arrow arrow-left hidden" onclick="App.slideRow('continue-slider', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="continue-slider" class="cards-slider">
+                            <!-- Populated with in-progress items -->
+                        </div>
+                        <button class="slider-arrow arrow-right" onclick="App.slideRow('continue-slider', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- 🏆 Top 10 Quizzes Today Row (with iconic Netflix big numbers) -->
+                <section id="top10-section" class="netflix-row top10-row">
+                    <div class="row-header">
+                        <h2 class="row-title">Top 10 Quizzes Today</h2>
+                        <span class="row-badge-live">LIVE RANKINGS</span>
+                    </div>
+                    <div class="row-slider-wrapper">
+                        <button class="slider-arrow arrow-left" onclick="App.slideRow('top10-slider', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="top10-slider" class="cards-slider top10-slider">
+                            <!-- Populated with top 10 quizzes + big numbers -->
+                        </div>
+                        <button class="slider-arrow arrow-right" onclick="App.slideRow('top10-slider', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- 🔖 My Quiz (Bookmarked Row) -->
+                <section id="myquiz-section" class="netflix-row myquiz-row">
+                    <div class="row-header">
+                        <h2 class="row-title">
+                            <i class="fa-solid fa-bookmark row-icon red-accent"></i> My Quiz Bookmarks
+                        </h2>
+                        <span class="row-subtitle">Quizzes saved by you</span>
+                    </div>
+                    <div class="row-slider-wrapper">
+                        <button class="slider-arrow arrow-left hidden" onclick="App.slideRow('myquiz-slider', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="myquiz-slider" class="cards-slider">
+                            <!-- Populated with Bookmarks -->
+                        </div>
+                        <button class="slider-arrow arrow-right" onclick="App.slideRow('myquiz-slider', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- 🔬 Academic & STEM Row -->
+                <section id="stem-section" class="netflix-row">
+                    <div class="row-header">
+                        <h2 class="row-title">Academic & STEM Mastery</h2>
+                        <span class="row-subtitle">Physics, Mathematics, Computer Science & Biology</span>
+                    </div>
+                    <div class="row-slider-wrapper">
+                        <button class="slider-arrow arrow-left" onclick="App.slideRow('stem-slider', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="stem-slider" class="cards-slider">
+                            <!-- STEM Quizzes -->
+                        </div>
+                        <button class="slider-arrow arrow-right" onclick="App.slideRow('stem-slider', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- 🌍 General Knowledge & World History Row -->
+                <section id="general-section" class="netflix-row">
+                    <div class="row-header">
+                        <h2 class="row-title">General Knowledge, History & Trivia</h2>
+                        <span class="row-subtitle">World Events, Cinema, Geography & Philosophy</span>
+                    </div>
+                    <div class="row-slider-wrapper">
+                        <button class="slider-arrow arrow-left" onclick="App.slideRow('general-slider', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="general-slider" class="cards-slider">
+                            <!-- GK Quizzes -->
+                        </div>
+                        <button class="slider-arrow arrow-right" onclick="App.slideRow('general-slider', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- ⚡ Speed Blitz Challenges Row -->
+                <section id="blitz-section" class="netflix-row">
+                    <div class="row-header">
+                        <h2 class="row-title">⚡ Speed Blitz (5-Min Challenges)</h2>
+                        <span class="row-subtitle">Quick-fire logic and reflex challenges</span>
+                    </div>
+                    <div class="row-slider-wrapper">
+                        <button class="slider-arrow arrow-left" onclick="App.slideRow('blitz-slider', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="blitz-slider" class="cards-slider">
+                            <!-- Blitz Quizzes -->
+                        </div>
+                        <button class="slider-arrow arrow-right" onclick="App.slideRow('blitz-slider', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+        <!-- 🏆 LEADERBOARD TAB VIEW -->
+        <section id="leaderboard-view" class="subpage-view hidden">
+            <div class="section-container">
+                <div class="subpage-header">
+                    <h1><i class="fa-solid fa-trophy trophy-gold"></i> QUIZFLIX Global Leaderboard</h1>
+                    <p>Hall of Fame & Top Scorers across all Academic and Trivia leagues</p>
+                </div>
+
+                <div class="leaderboard-podium" id="leaderboard-podium">
+                    <!-- Top 3 podium rendered here -->
+                </div>
+
+                <div class="leaderboard-table-container">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Profile</th>
+                                <th>Quiz Challenge</th>
+                                <th>Category</th>
+                                <th>Score</th>
+                                <th>Accuracy</th>
+                                <th>Time</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-table-body">
+                            <!-- Populated with rank rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🕐 PROFILE HISTORY TAB VIEW -->
+        <section id="history-view" class="subpage-view hidden">
+            <div class="section-container">
+                <div class="subpage-header">
+                    <h1><i class="fa-solid fa-clock-rotate-left red-accent"></i> Quiz History & Analytics</h1>
+                    <p>Track past performances, scores, and review answers for <span id="history-profile-title" class="profile-highlight">Alex</span></p>
+                </div>
+
+                <div class="stats-overview-grid" id="history-stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-gamepad"></i></div>
+                        <div class="stat-data">
+                            <span id="stat-total-quizzes" class="stat-num">0</span>
+                            <span class="stat-label">Quizzes Completed</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-star trophy-gold"></i></div>
+                        <div class="stat-data">
+                            <span id="stat-total-score" class="stat-num">0</span>
+                            <span class="stat-label">Total Points</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="stat-data">
+                            <span id="stat-avg-accuracy" class="stat-num">0%</span>
+                            <span class="stat-label">Average Accuracy</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-fire red-accent"></i></div>
+                        <div class="stat-data">
+                            <span id="stat-best-rank" class="stat-num">#1</span>
+                            <span class="stat-label">Top Rank Achieved</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-list" id="history-items-list">
+                    <!-- History Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 🔖 DEDICATED MY QUIZ TAB VIEW -->
+        <section id="myquiz-view" class="subpage-view hidden">
+            <div class="section-container">
+                <div class="subpage-header">
+                    <h1><i class="fa-solid fa-bookmark red-accent"></i> My Quiz Bookmarks</h1>
+                    <p>All quizzes saved to your personal watchlist</p>
+                </div>
+                <div id="myquiz-grid" class="cards-grid">
+                    <!-- Bookmarked Cards Grid -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 📚 DEDICATED CATEGORIES VIEW -->
+        <section id="categories-view" class="subpage-view hidden">
+            <div class="section-container">
+                <div class="subpage-header">
+                    <h1>Explore Quiz Categories</h1>
+                    <p>Browse comprehensive challenges by domain</p>
+                </div>
+                <div class="category-filter-pills">
+                    <button class="pill active" onclick="App.filterCategory('all', this)">All Categories</button>
+                    <button class="pill" onclick="App.filterCategory('Academic & STEM', this)">Academic & STEM</button>
+                    <button class="pill" onclick="App.filterCategory('General Knowledge & History', this)">General Knowledge</button>
+                    <button class="pill" onclick="App.filterCategory('Quick Blitz (5-Min)', this)">⚡ Quick Blitz</button>
+                </div>
+                <div id="categories-grid" class="cards-grid">
+                    <!-- Categorized Cards Grid -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="netflix-footer">
+            <div class="footer-container">
+                <div class="footer-brand">
+                    <span class="logo-red">QUIZ</span><span class="logo-white">FLIX</span>
+                    <p class="footer-tagline">The Interactive Learning & Quiz Streaming Experience</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#" onclick="App.navigate('home')">Home</a>
+                    <a href="#" onclick="App.navigate('categories')">All Quizzes</a>
+                    <a href="#" onclick="App.navigate('leaderboard')">Hall of Fame</a>
+                    <a href="#" onclick="Profiles.showProfileGateway()">Switch Profile</a>
+                    <a href="#" onclick="App.openTerminalGuide()">Terminal CLI Mode</a>
+                </div>
+                <p class="footer-copyright">QUIZFLIX Engine © 2026. Designed with Netflix-Grade UI/UX Aesthetics & SQLite Database.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 3. NETFLIX-STYLE DETAIL MODAL ("More Info") -->
+    <div id="detail-modal" class="netflix-modal hidden">
+        <div class="modal-backdrop" onclick="App.closeDetailModal()"></div>
+        <div class="modal-card">
+            <button class="modal-close-btn" onclick="App.closeDetailModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="modal-banner" id="modal-banner-bg">
+                <div class="modal-banner-content">
+                    <h2 id="modal-title" class="modal-title">Quiz Title</h2>
+                    <div class="modal-actions">
+                        <button id="modal-play-btn" class="btn-netflix-primary">
+                            <i class="fa-solid fa-play"></i> <span id="modal-play-text">Start Quiz</span>
+                        </button>
+                        <button id="modal-bookmark-btn" class="btn-netflix-icon">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <button id="modal-preview-btn" class="btn-netflix-icon" title="Sound preview">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-main-info">
+                    <div class="modal-meta-row">
+                        <span id="modal-match" class="meta-match">98% Match</span>
+                        <span id="modal-difficulty" class="meta-badge badge-master">MASTER</span>
+                        <span id="modal-questions-count" class="meta-info">5 Questions</span>
+                        <span id="modal-duration" class="meta-info"><i class="fa-regular fa-clock"></i> 5 Mins</span>
+                        <span class="meta-hd">HD AUDIO</span>
+                    </div>
+
+                    <p id="modal-description" class="modal-description">Quiz description goes here...</p>
+                    
+                    <div class="modal-tags" id="modal-tags-container">
+                        <!-- Tags badges -->
+                    </div>
+                </div>
+
+                <div class="modal-sidebar-info">
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Author / Creator:</span>
+                        <span id="modal-author" class="sidebar-value">QUIZFLIX Originals</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Category:</span>
+                        <span id="modal-category" class="sidebar-value">Academic & STEM</span>
+                    </div>
+                    <div class="sidebar-item">
+                        <span class="sidebar-label">Subcategory:</span>
+                        <span id="modal-subcategory" class="sidebar-value">Computer Science</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-questions-preview">
+                <h3>Curriculum & Questions Preview</h3>
+                <div id="modal-questions-list" class="questions-preview-list">
+                    <!-- Questions list -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. FULLSCREEN IMMERSIVE QUIZ PLAYER (The Theater Mode) -->
+    <div id="quiz-player-modal" class="quiz-player-view hidden">
+        
+        <!-- Player Top Bar -->
+        <div class="player-top-bar">
+            <button class="player-back-btn" onclick="Player.exitQuiz()" title="Save & Exit">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="player-quiz-info">
+                <span class="player-brand-tag">QUIZFLIX PLAYER</span>
+                <h2 id="player-quiz-title" class="player-quiz-title">Quiz Title</h2>
+            </div>
+            <div class="player-controls-right">
+                <button id="player-pause-btn" class="player-btn" onclick="Player.togglePause()" title="Pause/Resume">
+                    <i id="pause-icon" class="fa-solid fa-pause"></i> <span id="pause-text">Pause</span>
+                </button>
+                <div class="player-timer-pill" id="player-timer-box">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="player-timer-display">05:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Progress Bar -->
+        <div class="player-progress-container">
+            <div id="player-progress-bar" class="player-progress-fill" style="width: 0%;"></div>
+        </div>
+
+        <!-- Player Main Content -->
+        <div class="player-content-area">
+            <div class="question-container" id="player-question-card">
+                <div class="question-header">
+                    <div class="question-index-badge">
+                        QUESTION <span id="current-q-num">1</span> OF <span id="total-q-num">5</span>
+                    </div>
+                    <div class="question-points-badge">
+                        <i class="fa-solid fa-bolt trophy-gold"></i> <span id="question-points-val">100</span> PTS
+                    </div>
+                </div>
+
+                <h3 id="question-text" class="question-text">
+                    Question text will be rendered here...
+                </h3>
+
+                <!-- Options List -->
+                <div id="options-container" class="options-grid">
+                    <!-- Option buttons -->
+                </div>
+
+                <!-- Explanation Box (revealed after submitting answer) -->
+                <div id="explanation-box" class="explanation-box hidden">
+                    <div class="explanation-header">
+                        <i id="explanation-icon" class="fa-solid fa-circle-check"></i>
+                        <span id="explanation-status-text">Correct!</span>
+                    </div>
+                    <p id="explanation-body-text">Explanation content...</p>
+                </div>
+
+                <!-- Player Action Footer -->
+                <div class="question-actions-footer">
+                    <button id="btn-submit-answer" class="btn-player-submit" onclick="Player.submitAnswer()" disabled>
+                        Submit Answer
+                    </button>
+                    <button id="btn-next-question" class="btn-player-next hidden" onclick="Player.nextQuestion()">
+                        Next Question <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pause Overlay Modal -->
+        <div id="player-pause-overlay" class="player-pause-overlay hidden">
+            <div class="pause-card">
+                <i class="fa-solid fa-circle-pause pause-icon-big"></i>
+                <h2>Quiz Paused</h2>
+                <p>Your current question and elapsed time are safely saved to the database.</p>
+                <div class="pause-actions">
+                    <button class="btn-netflix-primary" onclick="Player.togglePause()">
+                        <i class="fa-solid fa-play"></i> Resume Quiz
+                    </button>
+                    <button class="btn-netflix-secondary" onclick="Player.exitQuiz()">
+                        <i class="fa-solid fa-house"></i> Save & Return Home
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz Completion Results Screen -->
+        <div id="player-results-screen" class="player-results-view hidden">
+            <div class="results-card">
+                <div class="results-header">
+                    <div class="results-trophy-badge" id="results-badge-icon">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h1 id="results-title">Quiz Completed!</h1>
+                    <p id="results-subtitle">Here is your performance breakdown</p>
+                </div>
+
+                <div class="results-score-display">
+                    <div class="score-circle">
+                        <span id="results-percentage" class="score-percent">100%</span>
+                        <span class="score-label">ACCURACY</span>
+                    </div>
+                    <div class="results-metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Total Points</span>
+                            <strong id="results-score" class="metric-val trophy-gold">570</strong>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Correct Answers</span>
+                            <strong id="results-correct" class="metric-val text-green">5 / 5</strong>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Time Spent</span>
+                            <strong id="results-time" class="metric-val">02:14</strong>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Profile</span>
+                            <strong id="results-profile" class="metric-val">Alex Quantum</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Netflix-Style Autoplay Next Quiz Countdown -->
+                <div class="next-quiz-countdown-card" id="next-quiz-recommendation">
+                    <div class="next-quiz-info">
+                        <span class="next-tag">UP NEXT FOR YOU</span>
+                        <h4 id="next-quiz-title">Python & Data Structures Masterclass</h4>
+                    </div>
+                    <button id="btn-play-next" class="btn-netflix-primary" onclick="Player.playNextRecommended()">
+                        <i class="fa-solid fa-play"></i> Play Now (<span id="countdown-num">5</span>s)
+                    </button>
+                </div>
+
+                <div class="results-actions">
+                    <button class="btn-netflix-secondary" onclick="Player.replayCurrentQuiz()">
+                        <i class="fa-solid fa-rotate-right"></i> Replay Quiz
+                    </button>
+                    <button class="btn-netflix-secondary" onclick="App.navigate('leaderboard')">
+                        <i class="fa-solid fa-trophy"></i> View Leaderboard
+                    </button>
+                    <button class="btn-netflix-primary" onclick="Player.exitQuiz()">
+                        <i class="fa-solid fa-house"></i> Return to Browse
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 5. PROFILE PIN AUTHENTICATION MODAL -->
+    <div id="pin-modal" class="netflix-modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="pin-modal-card">
+            <button class="modal-close-btn" onclick="Profiles.closePinModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="pin-header">
+                <i class="fa-solid fa-lock pin-lock-icon"></i>
+                <h2>Profile Locked</h2>
+                <p>Enter your 4-digit PIN to access <strong id="pin-target-name">Profile</strong></p>
+            </div>
+
+            <div class="pin-dots-container">
+                <span class="pin-dot" id="pdot-1"></span>
+                <span class="pin-dot" id="pdot-2"></span>
+                <span class="pin-dot" id="pdot-3"></span>
+                <span class="pin-dot" id="pdot-4"></span>
+            </div>
+
+            <p id="pin-error-msg" class="pin-error hidden">Incorrect PIN. Please try again.</p>
+
+            <div class="pin-keypad">
+                <button class="pin-key" onclick="Profiles.enterPinDigit('1')">1</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('2')">2</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('3')">3</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('4')">4</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('5')">5</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('6')">6</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('7')">7</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('8')">8</button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('9')">9</button>
+                <button class="pin-key pin-clear" onclick="Profiles.clearPin()"><i class="fa-solid fa-trash-can"></i></button>
+                <button class="pin-key" onclick="Profiles.enterPinDigit('0')">0</button>
+                <button class="pin-key pin-delete" onclick="Profiles.deletePinDigit()"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. PROFILE EDIT / CREATE MODAL -->
+    <div id="profile-edit-modal" class="netflix-modal hidden">
+        <div class="modal-backdrop" onclick="Profiles.closeProfileModal()"></div>
+        <div class="edit-profile-card">
+            <button class="modal-close-btn" onclick="Profiles.closeProfileModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 id="profile-modal-title">Edit Profile</h2>
+
+            <form id="profile-form" onsubmit="Profiles.saveProfileForm(event)">
+                <input type="hidden" id="edit-profile-id">
+
+                <div class="avatar-selection-section">
+                    <label class="form-label">Choose Avatar</label>
+                    <div class="avatar-options-grid" id="avatar-choices">
+                        <img src="assets/avatar-red.svg" class="avatar-option selected" data-avatar="avatar-red" onclick="Profiles.selectAvatarOption('avatar-red', this)">
+                        <img src="assets/avatar-blue.svg" class="avatar-option" data-avatar="avatar-blue" onclick="Profiles.selectAvatarOption('avatar-blue', this)">
+                        <img src="assets/avatar-yellow.svg" class="avatar-option" data-avatar="avatar-yellow" onclick="Profiles.selectAvatarOption('avatar-yellow', this)">
+                        <img src="assets/avatar-green.svg" class="avatar-option" data-avatar="avatar-green" onclick="Profiles.selectAvatarOption('avatar-green', this)">
+                        <img src="assets/avatar-purple.svg" class="avatar-option" data-avatar="avatar-purple" onclick="Profiles.selectAvatarOption('avatar-purple', this)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="profile-name-input" class="form-label">Profile Name</label>
+                    <input type="text" id="profile-name-input" class="form-input" placeholder="e.g. Master Scholar" required maxlength="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="profile-pin-input" class="form-label">Profile 4-Digit PIN (Optional)</label>
+                    <input type="password" id="profile-pin-input" class="form-input" placeholder="Leave empty for no PIN" maxlength="4" pattern="[0-9]{4}">
+                    <span class="form-hint">Protects profile access with a 4-digit code</span>
+                </div>
+
+                <div class="form-checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="profile-kids-input">
+                        <span>Kids Profile (Curated beginner & fun quizzes)</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-netflix-primary">Save Profile</button>
+                    <button type="button" id="btn-delete-profile" class="btn-netflix-danger hidden" onclick="Profiles.deleteCurrentEditingProfile()">Delete Profile</button>
+                    <button type="button" class="btn-netflix-secondary" onclick="Profiles.closeProfileModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 7. TERMINAL & SETTINGS MODAL -->
+    <div id="settings-modal" class="netflix-modal hidden">
+        <div class="modal-backdrop" onclick="App.closeSettingsModal()"></div>
+        <div class="settings-card">
+            <button class="modal-close-btn" onclick="App.closeSettingsModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2>QUIZFLIX System & Terminal CLI</h2>
+            
+            <div class="settings-section">
+                <h3>🖥️ Cross-Platform Terminal Interface</h3>
+                <p>You can run QUIZFLIX directly in your Windows, Linux, or macOS terminal:</p>
+                <div class="terminal-code-box">
+                    <code>python quizflix_cli.py</code>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>🌐 Run as Standalone Web Application</h3>
+                <p>To launch the backend server with persistent SQLite database:</p>
+                <div class="terminal-code-box">
+                    <code>python backend/app.py</code>
+                </div>
+                <p class="settings-hint">Access locally at <strong>http://localhost:5000</strong></p>
+            </div>
+
+            <div class="settings-section">
+                <h3>💾 Database Status</h3>
+                <p class="status-indicator"><i class="fa-solid fa-circle status-green"></i> SQLite Database (<code>quizflix.db</code>) Active</p>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn-netflix-primary" onclick="App.closeSettingsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Scripts (Modular Vanilla JS) -->
+    <script src="js/audio.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/profiles.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

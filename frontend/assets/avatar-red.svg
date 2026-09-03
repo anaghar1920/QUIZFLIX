@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="12" fill="#E50914"/>
+  <!-- Netflix style smile / classic avatar face -->
+  <circle cx="42" cy="48" r="8" fill="#ffffff"/>
+  <circle cx="78" cy="48" r="8" fill="#ffffff"/>
+  <path d="M 38 72 Q 60 92 82 72" stroke="#ffffff" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>
